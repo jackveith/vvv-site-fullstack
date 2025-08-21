@@ -1,0 +1,31 @@
+
+version: '3.9'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: vvv-site-backend/Dockerfile
+    container_name: express-api
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: vvv-site-frontend/Dockerfile
+    container_name: next-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:4000
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
