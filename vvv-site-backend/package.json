@@ -1,0 +1,30 @@
+{
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.4"
+  },
+  "name": "vvv-site-backend",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "undici-types": "^7.10.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jackveith/vvv-site-fullstack.git"
+  },
+  "author": "Jack Veith",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jackveith/vvv-site-fullstack/issues"
+  },
+  "homepage": "https://github.com/jackveith/vvv-site-fullstack#readme",
+  "description": ""
+}
