@@ -1,20 +1,25 @@
 
 version: '3.9'
 services:
+
+
   backend:
     build:
-      context: .
-      dockerfile: vvv-site-backend/Dockerfile
+      context: ./vvv-site-backend/
+      dockerfile: Dockerfile
+      target: prod
     container_name: express-api
     ports:
       - "4000:4000"
     networks:
       - app-network
+    command: npm run start
 
   frontend:
     build:
-      context: .
-      dockerfile: vvv-site-frontend/Dockerfile
+      context: ./vvv-site-frontend/
+      dockerfile: Dockerfile
+      target: prod
     container_name: next-frontend
     ports:
       - "3000:3000"
@@ -24,6 +29,7 @@ services:
       - NEXT_PUBLIC_API_URL=http://backend:4000
     networks:
       - app-network
+    command: npm run start
 
 
 networks:

@@ -95,7 +95,7 @@ export default function Home() {
             width={16}
             height={16}
           />
-          Go to nextjs.org →
+          Gogogo poggeres? to this link: nextjs.org →
         </a>
       </footer>
     </div>

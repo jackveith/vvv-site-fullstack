@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+
+  backend:
+    build:
+      target: dev
+    volumes:
+      - ./vvv-site-backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+
+  frontend:
+    build:
+      target: dev
+    environment:
+      - NEXT_WEBPACK_USEPOLLING=true
+      - NEXT_BUNDLER=webpack
+    volumes:
+      - ./vvv-site-frontend:/app
+      - /app/node_modules
+    command: npm run dev

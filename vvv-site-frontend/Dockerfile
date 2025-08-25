@@ -1,21 +1,37 @@
-
+# ---- BASE ----
 # Node 20 LTS, lightweight base image
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 WORKDIR /app
 
 #catch and copy both package.json and package-lock.json
-COPY vvv-site-frontend/package*.json ./
+COPY package*.json ./
 RUN npm install 
 
+# ---- DEVELOPMENT ---
+FROM base AS dev
+WORKDIR /app
 # copy rest of code
-COPY vvv-site-frontend/ ./
+COPY . .
+CMD ["npm", "run", "dev"]
 
-#build Next app
+# ---- PRODUCTION (build) ----
+FROM base AS build
+WORKDIR /app
+COPY . .
 RUN npm run build
 
-#specify container's port
+# ---- PRODUCTION (runtime) ----
+FROM node:20-alpine AS prod
+WORKDIR /app
+
+COPY --from=build /app/package*.json ./
+RUN npm install --only=production
 EXPOSE 3000 
 
-CMD ["npm", "start"]
+COPY --from=build /app/.next ./.next
+COPY --from=build /app/public ./public
+COPY --from=build /app/next.config.ts ./next.config.ts
+
+CMD ["npm", "run", start"]
 
