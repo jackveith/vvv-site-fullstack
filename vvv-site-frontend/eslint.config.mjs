@@ -9,13 +9,12 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
     baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
 });
 
 const eslintConfig = [
 
     ...compat.config({
-        extends: ["eslint:recommended", "next"],
+        extends: ['next/core-web-vitals', 'next/typescript'],
     }),
     {
         files: ["**/*.ts", "**/*.tsx"],
