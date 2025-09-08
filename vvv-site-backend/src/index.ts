@@ -4,6 +4,7 @@ import { MongoClient, ServerApiVersion, Db } from "mongodb";
 
 
 const app = express();
+const c = 0;
 
 const uri = `${process.env.DATABASE_URI}`;
 let db: Db;
