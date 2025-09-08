@@ -9,7 +9,7 @@ const uri = `${process.env.DATABASE_URI}`;
 let db: Db;
 
 async function connectDB() {
-    const client = new MongoClient (uri, {
+    const client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
             strict: true,
@@ -28,17 +28,17 @@ app.use(express.json());
 
 // Example API route
 app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hello from Express!" });
+    res.json({ message: "Hello from Express!" });
 });
 
 
 app.get("/ping", (req, res) => {
-  res.json({message:"ping test succeeded. And, good day :)"});
+    res.json({ message: "ping test succeeded. And, good day :)" });
 });
 
 
 app.get("/user/:name", async (req, res) => {
-    
+
     try {
         const name = req.params.name;
 
@@ -53,7 +53,7 @@ app.get("/user/:name", async (req, res) => {
         res.json(result);
     } catch (err) {
         console.error(err);
-        res.status(500).json({message: "Internal server error."});
+        res.status(500).json({ message: "Internal server error." });
     }
 });
 

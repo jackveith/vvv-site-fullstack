@@ -1,39 +1,47 @@
 {
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.3.0",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
-    "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
-  },
-  "name": "vvv-site-backend",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "src/index.ts",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "mongodb": "^6.19.0",
-    "undici-types": "^7.10.0"
-  },
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon -L --polling-interval 1000 --watch src --ext ts --exec \"node --loader ts-node/esm src/index.ts\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jackveith/vvv-site-fullstack.git"
-  },
-  "author": "Jack Veith",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/jackveith/vvv-site-fullstack/issues"
-  },
-  "homepage": "https://github.com/jackveith/vvv-site-fullstack#readme",
-  "description": ""
+    "devDependencies": {
+        "@eslint/js": "^9.35.0",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/node": "^24.3.0",
+        "@typescript-eslint/eslint-plugin": "^8.42.0",
+        "@typescript-eslint/parser": "^8.42.0",
+        "eslint": "^9.35.0",
+        "eslint-plugin-node": "^11.1.0",
+        "nodemon": "^3.1.10",
+        "ts-node": "^10.9.2",
+        "ts-node-dev": "^2.0.0",
+        "tsx": "^4.20.5",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.42.0"
+    },
+    "name": "vvv-site-backend",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "src/index.ts",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^5.1.0",
+        "mongodb": "^6.19.0",
+        "undici-types": "^7.10.0"
+    },
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "nodemon -L --polling-interval 1000 --watch src --ext ts --exec \"node --loader ts-node/esm src/index.ts\"",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jackveith/vvv-site-fullstack.git"
+    },
+    "author": "Jack Veith",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/jackveith/vvv-site-fullstack/issues"
+    },
+    "homepage": "https://github.com/jackveith/vvv-site-fullstack#readme",
+    "description": ""
 }
