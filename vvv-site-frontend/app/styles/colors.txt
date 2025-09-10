@@ -1,0 +1,22 @@
+DARK
+#1A1D23 - Background
+#232730 - Surface (Cards)
+#F1F1F5 - Primary Text
+#A1A5B0 - Secondary Text
+#2E333D - Borders (Soft)
+#8B5FBF - Accent Primary (Amethyst)
+#9E6ED3 - Accent Secondary
+
+LIGHT
+#F8F7F4 - Background
+#FDFDFD - Surface (Cards)
+#1F1F29 - Primary Text
+#5A5A66 - Secondary Text
+#2E333D - Borders (Soft)
+#8B5FBF - Accent Primary (Amethyst)
+#9E6ED3 - Accent Secondary
+
+SHARED
+#6BCEAD - Success (Mint)
+#E09A4F - Warning (Butterscotch)
+#DA4848 - Error (Poppy)
