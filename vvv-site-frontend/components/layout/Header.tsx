@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Github, Linkedin, Bubbles } from "lucide-react"
+import { ModeToggle } from "@/components/ui/theme-button"
 
 function toggleDarkMode(event: React.MouseEvent) {
     document.documentElement.classList.toggle("dark");
@@ -29,14 +30,12 @@ export default function Header() {
 
                 <div className="flex items-end justify-between p-4 gap-4">
                     <a href="https://github.com/jackveith" target="_blank" rel="noreferrer">
-                        <Github className="hover:stroke-accent" />
+                        <Github className="hover:stroke-secondary" />
                     </a>
                     <a href="https://www.linkedin.com/in/jveith/" target="_blank" rel="noreferrer">
-                        <Linkedin />
+                        <Linkedin className="hover:stroke-secondary" />
                     </a>
-                    <a onClick={toggleDarkMode} target="_blank" rel="noreferrer">
-                        <Bubbles />
-                    </a>
+                    <ModeToggle />
                 </div>
 
             </div>
