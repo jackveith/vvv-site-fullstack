@@ -29,7 +29,7 @@ class Point {
         this.y = y;
 
         //nonoscillating edge points
-        this.radius = isEdge ? MOVE_RADIUS * (0.5 + 1.0 * Math.random()) : 0;
+        this.radius = isEdge ? 0 : MOVE_RADIUS * (0.5 + 1.0 * Math.random());
 
         //movement
         this.ax = Math.random() * 2 * Math.PI;
