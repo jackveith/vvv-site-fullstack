@@ -5,7 +5,7 @@ import Image from "next/image";
 
 import Delaunator from 'delaunator';
 
-const POINT_COUNT = 30;
+const POINT_COUNT = 120;
 const MOVE_RADIUS = 18;
 const MAX_EDGE_LEN = 160;
 
@@ -34,8 +34,8 @@ class Point {
         //movement
         this.ax = Math.random() * 2 * Math.PI;
         this.ay = Math.random() * 2 * Math.PI;
-        this.vx = 0.0005 + Math.random() * 0.002;
-        this.vy = 0.0005 + Math.random() * 0.002;
+        this.vx = 0.0003 + Math.random() * 0.0005;
+        this.vy = 0.0003 + Math.random() * 0.0005;
     }
 
     update(t: number) {
@@ -50,15 +50,104 @@ class Point {
 const initPoints = (w: number, h: number, points: Point[]) => {
 
     points.length = 0;
-    console.log("init");
 
-    for (let i = 0; i < POINT_COUNT; i++) {
-        const bx = Math.random() * w;
-        const by = Math.random() * h;
-        points.push(new Point(bx, by));
+    //for (let i = 0; i < POINT_COUNT; i++) {
+    //    const bx = Math.random() * w;
+    //    const by = Math.random() * h;
+    //    points.push(new Point(bx, by));
+    //}
+
+    //Bridson's Poisson Disk sampling
+    //https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm
+
+    const distance2d = (x1: number, y1: number, x2: number, y2: number) => {
+        return (Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2)));
+    }
+    const insertPoint = (grid: [number, number][][], cellSize: number, point: [number, number]) => {
+        const xi = Math.floor(point[0] / cellSize);
+        const yi = Math.floor(point[1] / cellSize);
+        grid[xi][yi] = point;
+    }
+    const isValidPoint = (grid: [number, number][][], cellSize: number, gridW: number, gridH: number, point: [number, number], r: number) => {
+        const px = point[0], py = point[1];
+
+        if (px < 0 || px >= w || py < 0 || py >= h) return false;
+
+        //point's grid coords
+        const xi = Math.floor(px / cellSize), yi = Math.floor(py / cellSize);
+        //indices for surrounding cells
+        const i0 = Math.max(xi - 1, 0), j0 = Math.max(yi - 1, 0);
+        const i1 = Math.min(xi + 1, gridW - 1), j1 = Math.min(yi + 1, gridH - 1);
+
+        for (let i = i0; i <= i1; i++) {
+            for (let j = j0; j <= j1; j++) {
+                if (grid[i][j]) {
+                    //check if point is sufficiently far from adj. points
+                    const gpx = grid[i][j][0], gpy = grid[i][j][1];
+                    if (distance2d(gpx, gpy, px, py) < r) return false;
+                }
+            }
+        }
+
+        return true;
     }
 
-    const edgePointsW = 5;
+
+    const dim = 2;
+    const r = 54;
+    const tries = 30;
+    const cellSize = Math.floor(r / Math.sqrt(dim));
+    const ncellsW = Math.ceil(w / cellSize) + 1;
+    const ncellsH = Math.ceil(h / cellSize) + 1;
+    const grid: [number, number][][] = Array.from({ length: ncellsH }, () => Array(ncellsW).fill(null));
+    const primitivePoints: [number, number][] = [];
+    const activePoints: [number, number][] = [];
+
+    //starting point, distributed randomly
+    const p0: [number, number] = [Math.random() * w, Math.random() * h];
+    insertPoint(grid, cellSize, p0);
+    primitivePoints.push(p0);
+    activePoints.push(p0);
+
+    //try to generate a new point until no activePoints left
+    while (activePoints.length > 0) {
+        const randomIndex = Math.floor(Math.random() * activePoints.length);
+        const [rpx, rpy] = activePoints[randomIndex];
+
+        let found: boolean = false;
+        for (let t = 0; t < tries; t++) {
+            const theta: number = Math.random() * 360;
+            const radians: number = (theta * Math.PI) / 180;
+            const newRadius: number = Math.random() * r + r;
+            const newX = rpx + newRadius * Math.cos(radians);
+            const newY = rpy + newRadius * Math.sin(radians);
+
+            //if this new point not Valid -> try next point
+            if (!isValidPoint(grid, cellSize, ncellsW, ncellsH, [newX, newY], r)) continue;
+
+            //if valid push to all arrays
+            insertPoint(grid, cellSize, [newX, newY]);
+            primitivePoints.push([newX, newY]);
+            activePoints.push([newX, newY]);
+
+            found = true;
+            break;
+        }
+
+        //remove this active point if no valid adj. points found
+        if (!found) { activePoints.splice(randomIndex, 1) }
+    }
+
+    //push all primitivePoints as Point objects
+    for (const [px, py] of primitivePoints) {
+        points.push(new Point(px, py));
+    }
+    //end Poisson Disk sampling
+
+
+
+    //static edge points
+    const edgePointsW = 25;
     const edgeStepW = w / edgePointsW;
 
     for (let bx = 0; bx <= w; bx += edgeStepW) {
@@ -66,7 +155,7 @@ const initPoints = (w: number, h: number, points: Point[]) => {
         points.push(new Point(bx, h, true));
     }
 
-    const edgePointsH = 9;
+    const edgePointsH = 49;
     const edgeStepH = h / edgePointsH;
 
     for (let by = 0; by <= w; by += edgeStepH) {
@@ -75,6 +164,30 @@ const initPoints = (w: number, h: number, points: Point[]) => {
     }
 
     return points;
+}
+
+const lerpHSL = (color1: [number, number, number], color2: [number, number, number], fold: number): string => {
+    const [h1, s1, l1] = color1;
+    const [h2, s2, l2] = color2;
+
+    let dh = h2 - h1;
+    if (dh > 180) dh -= 360;
+    if (dh < -180) dh += 360;
+
+    const h = (h1 + dh * fold + 360) % 360;
+    const s = s1 + (s2 - s1) * fold;
+    const l = l1 + (l2 - l1) * fold;
+
+    return `hsl(${h}, ${s}%, ${l}%)`;
+
+}
+
+const lerpHSLSlatePurple = (fold: number): string => {
+    return lerpHSL([220, 15, 8], [268, 43, 56], fold);
+}
+
+const mapToTriangleWave = (t: number): number => {
+    return t <= .5 ? t * 2 : (1 - t) * 2;
 }
 
 export default function Home() {
@@ -135,10 +248,10 @@ export default function Home() {
                 const cx = (a.x + b.x + c.x) / 3;
                 const cy = (a.y + b.y + c.y) / 3;
 
-                const hue = Math.round((cx / displayWidth) * 360);
-                const sat = 55 + Math.round((cy / displayHeight) * 20);
-                const light = 45;
-                const alpha = 0.9;
+                //const hue = 262;
+                //const sat = 40 + Math.round((cx / displayWidth) * 30);
+                //const light = 5 + Math.round((cy / displayHeight) * 90);
+                //const alpha = 0.9;
 
                 ctx.beginPath();
                 ctx.moveTo(a.x, a.y);
@@ -146,7 +259,9 @@ export default function Home() {
                 ctx.lineTo(c.x, c.y);
                 ctx.closePath();
 
-                ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%, ${alpha})`;
+                const normalizedY = cy / displayHeight;
+                const triangleFoldedY = mapToTriangleWave(normalizedY);
+                ctx.fillStyle = lerpHSLSlatePurple(triangleFoldedY);
                 ctx.fill();
 
                 ctx.strokeStyle = `rgba(255,255,255,${0.04 + 0.02 * Math.random()})`;
