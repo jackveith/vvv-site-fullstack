@@ -194,8 +194,8 @@ export default function Home() {
 
     useEffect(() => {
 
-        let leftPoints: Point[] = [];
-        let rightPoints: Point[] = [];
+        const leftPoints: Point[] = [];
+        const rightPoints: Point[] = [];
         let frameId: number;
 
 
@@ -286,7 +286,7 @@ export default function Home() {
 
     return (
 
-        <div className="font-sans grid grid-rows-[20px_1fr_20px] grid-cols-[auto_1fr_auto] min-h-screen" >
+        <div className="font-sans grid grid-rows-[20px_1fr_20px] grid-cols-[auto_1fr_auto] h-full">
             <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full" />
             <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full" />
             <main className="flex flex-col gap-[32px] col-start-2 h-full items-center sm:items-start">
