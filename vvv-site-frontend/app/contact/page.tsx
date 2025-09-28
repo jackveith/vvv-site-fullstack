@@ -34,8 +34,8 @@ class Point {
         //movement
         this.ax = Math.random() * 2 * Math.PI;
         this.ay = Math.random() * 2 * Math.PI;
-        this.vx = 0.0003 + Math.random() * 0.0005;
-        this.vy = 0.0003 + Math.random() * 0.0005;
+        this.vx = 0.0001 + Math.random() * 0.0005;
+        this.vy = 0.0001 + Math.random() * 0.0005;
     }
 
     update(t: number) {
@@ -50,12 +50,6 @@ class Point {
 const initPoints = (w: number, h: number, points: Point[]) => {
 
     points.length = 0;
-
-    //for (let i = 0; i < POINT_COUNT; i++) {
-    //    const bx = Math.random() * w;
-    //    const by = Math.random() * h;
-    //    points.push(new Point(bx, by));
-    //}
 
     //Bridson's Poisson Disk sampling
     //https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm
@@ -81,6 +75,8 @@ const initPoints = (w: number, h: number, points: Point[]) => {
 
         for (let i = i0; i <= i1; i++) {
             for (let j = j0; j <= j1; j++) {
+                console.log(`i:${i}, j:${j}`);
+                console.log(grid);
                 if (grid[i][j]) {
                     //check if point is sufficiently far from adj. points
                     const gpx = grid[i][j][0], gpy = grid[i][j][1];
@@ -99,7 +95,7 @@ const initPoints = (w: number, h: number, points: Point[]) => {
     const cellSize = Math.floor(r / Math.sqrt(dim));
     const ncellsW = Math.ceil(w / cellSize) + 1;
     const ncellsH = Math.ceil(h / cellSize) + 1;
-    const grid: [number, number][][] = Array.from({ length: ncellsH }, () => Array(ncellsW).fill(null));
+    const grid: [number, number][][] = Array.from({ length: ncellsW }, () => Array(ncellsH).fill(null));
     const primitivePoints: [number, number][] = [];
     const activePoints: [number, number][] = [];
 
@@ -115,6 +111,7 @@ const initPoints = (w: number, h: number, points: Point[]) => {
         const [rpx, rpy] = activePoints[randomIndex];
 
         let found: boolean = false;
+        //compute coords of new point at random angle/dist
         for (let t = 0; t < tries; t++) {
             const theta: number = Math.random() * 360;
             const radians: number = (theta * Math.PI) / 180;
