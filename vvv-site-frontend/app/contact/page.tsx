@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef } from 'react';
-import Image from "next/image";
+import { ContactCard } from '@/components/ui/contact-card'
+import { Send, CodeXml, Handshake } from 'lucide-react'
 
 import Delaunator from 'delaunator';
 
@@ -75,8 +76,6 @@ const initPoints = (w: number, h: number, points: Point[]) => {
 
         for (let i = i0; i <= i1; i++) {
             for (let j = j0; j <= j1; j++) {
-                console.log(`i:${i}, j:${j}`);
-                console.log(grid);
                 if (grid[i][j]) {
                     //check if point is sufficiently far from adj. points
                     const gpx = grid[i][j][0], gpy = grid[i][j][1];
@@ -278,7 +277,7 @@ export default function Home() {
 
         };
 
-        frameId = requestAnimationFrame(loop);
+        //frameId = requestAnimationFrame(loop);
 
         return () => cancelAnimationFrame(frameId);
 
@@ -289,7 +288,10 @@ export default function Home() {
         <div className="font-sans grid grid-rows-[20px_1fr_20px] grid-cols-[auto_1fr_auto] h-full">
             <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full" />
             <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full" />
-            <main className="flex flex-col gap-[32px] col-start-2 h-full items-center sm:items-start">
+            <main className="flex flex-col gap-[32px] col-start-2 h-full items-center justify-items-center">
+                <ContactCard icon={Send} label='Email' href='mailto:jackveith28@gmail.com' linktext='a' />
+                <ContactCard icon={CodeXml} label='Github' href='https://github.com/jackveith' linktext='b' />
+                <ContactCard icon={Handshake} label='LinkedIn' href='https://www.linkedin.com/in/jveith/' linktext='c' />
             </main>
         </div>
     )

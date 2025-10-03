@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Github, Linkedin, Bubbles } from "lucide-react"
+import { Github, Linkedin } from "lucide-react"
 import { ModeToggle } from "@/components/ui/theme-button"
 
 function toggleDarkMode(event: React.MouseEvent) {
@@ -11,24 +11,27 @@ function toggleDarkMode(event: React.MouseEvent) {
 
 export default function Header() {
     return (
-        <header className="w-full border-b bg-background">
+        <header className="font-jakarta w-full border-b bg-background">
             <div className="mx-auto flex max-w-6xl items-center justify-between p-4">
                 {/* Logo / Brand */}
-                <Link href="/" className="text-xl font-bold">
+                <Link href="/" className="font-grotesk text-3xl font-bold">
                     Jack Veith
                 </Link>
 
                 {/* Navigation */}
                 <nav className="flex gap-4">
-                    <Link href="/about" className="text-sm font-medium hover:underline">
+                    <Link href="/" className="text-md font-medium hover:underline">
+                        Home
+                    </Link>
+                    <Link href="/about" className="text-md font-medium hover:underline">
                         About
                     </Link>
-                    <Link href="/contact" className="text-sm font-medium hover:underline">
+                    <Link href="/contact" className="text-md font-medium hover:underline">
                         Contact
                     </Link>
                 </nav>
 
-                <div className="flex items-end justify-between p-4 gap-4">
+                <div className="flex items-center justify-between p-4 gap-4">
                     <a href="https://github.com/jackveith" target="_blank" rel="noreferrer">
                         <Github className="hover:stroke-secondary" />
                     </a>
