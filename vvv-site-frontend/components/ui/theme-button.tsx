@@ -25,8 +25,14 @@ export function ModeToggle() {
         setMounted(true)
     }, [])
 
+    //render a dummy button to fill space and prevent layout shift until button mounts
     if (!mounted) {
-        return null
+        return (
+            <div
+                className="flex items-center justify-center h-[2rem] w-[2rem] rounded-md bg-muted animate-pulse"
+                aria-hidden="true"
+            />
+        )
     }
 
     return (
