@@ -210,14 +210,23 @@ export default function Home() {
             //if w/h changed, resize and reinit points
             //TODO look into this logic and see if it might be causing the
             //perpetual canvas resizing issue
-            const displayWidth = canvas.clientWidth;
-            const displayHeight = canvas.clientHeight;
-            if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+
+
+
+            const canvasBoundingRect = canvas.getBoundingClientRect();
+            const displayWidth = canvasBoundingRect.width;
+            const displayHeight = Math.floor(canvasBoundingRect.height);
+
+            /*
+            if (Math.floor(canvas.height) != displayHeight) {
+                console.log(`h: ${canvas.height}, dh: ${displayHeight}`);
                 canvas.width = displayWidth;
                 canvas.height = displayHeight;
 
+
                 points = initPoints(displayWidth, displayHeight, points);
-            }
+            }*/
+
 
             ctx.clearRect(0, 0, displayWidth, displayHeight);
 
@@ -267,7 +276,7 @@ export default function Home() {
             frameId = requestAnimationFrame(loop);
         };
 
-        //frameId = requestAnimationFrame(loop);
+        frameId = requestAnimationFrame(loop);
 
         return () => cancelAnimationFrame(frameId);
 
@@ -276,13 +285,13 @@ export default function Home() {
     return (
 
         <div className="font-sans grid grid-rows-[20px_1fr_20px] grid-cols-[auto_1fr_auto] h-full">
-            <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full" />
-            <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full" />
-            <main className="flex flex-col gap-[32px] col-start-2 h-full items-center justify-items-center">
+            <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full flex-1" />
+            <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full flex-1" />
+            <div className="flex flex-col gap-[32px] col-start-2 h-full items-center justify-items-center">
                 <ContactCard icon={Send} label='Email' href='mailto:jackveith28@gmail.com' linktext='a' />
                 <ContactCard icon={CodeXml} label='Github' href='https://github.com/jackveith' linktext='b' />
                 <ContactCard icon={Handshake} label='LinkedIn' href='https://www.linkedin.com/in/jveith/' linktext='c' />
-            </main>
+            </div>
         </div>
     )
 };
