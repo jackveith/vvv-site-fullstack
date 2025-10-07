@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
+import Header from "@/components/layout/Header"
+import Footer from "@/components/layout/Footer"
 
+/*
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
 });
+*/
 
 const geistMono = Geist_Mono({
     variable: "--font-geist-mono",
@@ -40,7 +44,11 @@ export default function RootLayout({
         <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
             <body>
                 <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-                    {children}
+                    <div className="antialiased min-h-screen flex flex-col">
+                        <Header />
+                        <main className="flex-1"> {children} </main>
+                        <Footer />
+                    </div>
                 </ThemeProvider>
             </body>
         </html>

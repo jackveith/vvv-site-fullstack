@@ -50,6 +50,11 @@
 }
 
 :root {
+    /*layout constants*/
+    --header-height: clamp(56px, 8vh, 96px);
+    --footer-height: clamp(40px, 6vh, 80px);
+
+
     --radius: 0.625rem;
     /* BACKGROUND #f8f7f4 */
     --background: oklch(0.9671 0.0041 91.45);

@@ -52,9 +52,10 @@ const initPoints = (w: number, h: number, points: Point[]) => {
 
     points.length = 0;
 
-    //Bridson's Poisson Disk sampling
+    //Bridson's Poisson Disk Sampling
     //https://sighack.com/post/poisson-disk-sampling-bridsons-algorithm
 
+    //BPDS helper functions
     const distance2d = (x1: number, y1: number, x2: number, y2: number) => {
         return (Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2)));
     }
@@ -86,7 +87,7 @@ const initPoints = (w: number, h: number, points: Point[]) => {
 
         return true;
     }
-
+    //end BPDS helper functions
 
     const dim = 2;
     const r = 54;
@@ -139,8 +140,6 @@ const initPoints = (w: number, h: number, points: Point[]) => {
         points.push(new Point(px, py));
     }
     //end Poisson Disk sampling
-
-
 
     //static edge points
     const edgePointsW = 25;
@@ -197,7 +196,6 @@ export default function Home() {
         const rightPoints: Point[] = [];
         let frameId: number;
 
-
         const draw = (canvas: HTMLCanvasElement | null, t: number, points: Point[]) => {
 
             if (!canvas) return;
@@ -205,13 +203,13 @@ export default function Home() {
             if (!ctx) return;
             //context exists
 
-
             //init points
             if (points.length === 0) {
                 points = initPoints(canvas.clientWidth, canvas.clientHeight, points);
             }
-
             //if w/h changed, resize and reinit points
+            //TODO look into this logic and see if it might be causing the
+            //perpetual canvas resizing issue
             const displayWidth = canvas.clientWidth;
             const displayHeight = canvas.clientHeight;
             if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
@@ -244,11 +242,6 @@ export default function Home() {
                 const cx = (a.x + b.x + c.x) / 3;
                 const cy = (a.y + b.y + c.y) / 3;
 
-                //const hue = 262;
-                //const sat = 40 + Math.round((cx / displayWidth) * 30);
-                //const light = 5 + Math.round((cy / displayHeight) * 90);
-                //const alpha = 0.9;
-
                 ctx.beginPath();
                 ctx.moveTo(a.x, a.y);
                 ctx.lineTo(b.x, b.y);
@@ -263,9 +256,7 @@ export default function Home() {
                 ctx.strokeStyle = `rgba(255,255,255,${0.04 + 0.02 * Math.random()})`;
                 ctx.stroke();
 
-
             }
-
         };
 
         const loop = (time: number) => {
@@ -274,7 +265,6 @@ export default function Home() {
             draw(rightCanvasRef.current, time, rightPoints);
 
             frameId = requestAnimationFrame(loop);
-
         };
 
         //frameId = requestAnimationFrame(loop);
