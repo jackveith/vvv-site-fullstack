@@ -40,8 +40,8 @@ class Point {
         //movement
         this.ax = Math.random() * 2 * Math.PI;
         this.ay = Math.random() * 2 * Math.PI;
-        this.vx = 0.0001 + Math.random() * 0.0005;
-        this.vy = 0.0001 + Math.random() * 0.0005;
+        this.vx = 0.0001 + Math.random() * 0.0003;
+        this.vy = 0.0001 + Math.random() * 0.0003;
     }
 
     update(t: number) {
@@ -242,7 +242,6 @@ export default function Home() {
             if (points.length === 0) {
                 points = initPoints(canvasTargetWidth, canvasTargetHeight, points);
             }
-
             //if w/h changed, resize and reinit points
             if (canvas.height != canvasTargetHeight || canvas.width != canvasTargetWidth) {
                 canvas.width = canvasTargetWidth;
@@ -251,17 +250,14 @@ export default function Home() {
                 points = initPoints(canvasTargetWidth, canvasTargetHeight, points);
             }
 
-
+            //wipe canvas and update pts
             ctx.clearRect(0, 0, canvasTargetWidth, canvasTargetHeight);
-
-            //update pts
             for (const p of points) {
                 p.update(t);
             }
 
             const delaunay = Delaunator.from(points.map(p => [p.x, p.y]));
             const triangles = delaunay.triangles;
-
 
             ctx.lineWidth = 0.8;
             //color fill and stroke based on theme
@@ -314,9 +310,9 @@ export default function Home() {
             <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full flex-1" />
             <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full flex-1" />
             <div className="flex flex-col gap-[32px] col-start-2 h-full items-center justify-items-center">
-                <ContactCard icon={Send} label='Email' href='mailto:jackveith28@gmail.com' linktext='a' />
-                <ContactCard icon={CodeXml} label='Github' href='https://github.com/jackveith' linktext='b' />
-                <ContactCard icon={Handshake} label='LinkedIn' href='https://www.linkedin.com/in/jveith/' linktext='c' />
+                <ContactCard icon={Send} label='Email' href='mailto:jackveith28@gmail.com' linktext='jackveith28' />
+                <ContactCard icon={CodeXml} label='Github' href='https://github.com/jackveith' linktext='gh/jackveith' />
+                <ContactCard icon={Handshake} label='LinkedIn' href='https://www.linkedin.com/in/jveith/' linktext='in/jveith' />
             </div>
         </div>
     )

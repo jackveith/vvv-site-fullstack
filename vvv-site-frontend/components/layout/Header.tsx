@@ -32,6 +32,9 @@ export default function Header() {
                     <Link href="/contact" className="text-md font-medium hover:underline">
                         Contact
                     </Link>
+                    <Link href="/sim" className="text-md font-medium hover:underline">
+                        Sim
+                    </Link>
                 </nav>
 
                 <div className="flex items-center justify-between p-4 gap-4">
