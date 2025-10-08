@@ -12,7 +12,7 @@ function toggleDarkMode(event: React.MouseEvent) {
 export default function Header() {
     return (
         <header className="font-jakarta w-full h-[var(--header-height)] border-b bg-background">
-            <div className="mx-auto flex max-w-6xl items-center justify-between p-4">
+            <div className="mx-auto flex max-w-6xl items-center justify-between p-2">
                 {/* Logo / Brand */}
                 <Link href="/" className="font-grotesk text-3xl font-bold">
                     Jack Veith
