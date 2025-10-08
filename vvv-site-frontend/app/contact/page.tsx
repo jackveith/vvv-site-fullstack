@@ -3,12 +3,17 @@
 import { useEffect, useRef } from 'react';
 import { ContactCard } from '@/components/ui/contact-card'
 import { Send, CodeXml, Handshake } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 import Delaunator from 'delaunator';
 
 const POINT_COUNT = 120;
 const MOVE_RADIUS = 18;
 const MAX_EDGE_LEN = 160;
+
+const canvasWidthProportion = 0.15;
+let canvasTargetWidth = 0;
+let canvasTargetHeight = 0;
 
 class Point {
 
@@ -48,7 +53,25 @@ class Point {
     }
 }
 
+const handleResize = () => {
+
+    //retrieve current layout component heights for canvasTargetHeight calc
+    const headerH: number = document.querySelector('header')?.offsetHeight ?? 76;
+    const footerH: number = document.querySelector('footer')?.offsetHeight ?? 60;
+
+    canvasTargetHeight = Math.ceil(window.innerHeight - headerH - footerH);
+    canvasTargetWidth = Math.ceil(canvasWidthProportion * window.innerWidth);
+}
+
 const initPoints = (w: number, h: number, points: Point[]) => {
+
+    //define how large the area in which the points will be generated in will be proportional to the canvas display W/H
+    const pointAreaBufferProportion = 0.2;
+
+    const canvasW = w, canvasH = h;
+    const wPad = w * (pointAreaBufferProportion / 2), hPad = h * (pointAreaBufferProportion / 2);
+    w = w * (1 + pointAreaBufferProportion);
+    h = h * (1 + pointAreaBufferProportion);
 
     points.length = 0;
 
@@ -84,7 +107,6 @@ const initPoints = (w: number, h: number, points: Point[]) => {
                 }
             }
         }
-
         return true;
     }
     //end BPDS helper functions
@@ -137,7 +159,9 @@ const initPoints = (w: number, h: number, points: Point[]) => {
 
     //push all primitivePoints as Point objects
     for (const [px, py] of primitivePoints) {
-        points.push(new Point(px, py));
+        //oversized point grid is aligned with canvas topleft corner,
+        //so adjust all points up and left
+        points.push(new Point(px - wPad, py - hPad));
     }
     //end Poisson Disk sampling
 
@@ -145,17 +169,17 @@ const initPoints = (w: number, h: number, points: Point[]) => {
     const edgePointsW = 25;
     const edgeStepW = w / edgePointsW;
 
-    for (let bx = 0; bx <= w; bx += edgeStepW) {
-        points.push(new Point(bx, 0, true));
-        points.push(new Point(bx, h, true));
+    for (let bx = (0 - wPad); bx <= w; bx += edgeStepW) {
+        points.push(new Point(bx, -hPad, true));
+        points.push(new Point(bx, h - hPad, true));
     }
 
     const edgePointsH = 49;
     const edgeStepH = h / edgePointsH;
 
-    for (let by = 0; by <= w; by += edgeStepH) {
-        points.push(new Point(0, by, true));
-        points.push(new Point(w, by, true));
+    for (let by = (0 - hPad); by <= h; by += edgeStepH) {
+        points.push(new Point(-wPad, by, true));
+        points.push(new Point(w - wPad, by, true));
     }
 
     return points;
@@ -178,7 +202,10 @@ const lerpHSL = (color1: [number, number, number], color2: [number, number, numb
 }
 
 const lerpHSLSlatePurple = (fold: number): string => {
-    return lerpHSL([220, 15, 8], [268, 43, 56], fold);
+    return lerpHSL([220, 15, 10], [268, 43, 56], fold);
+}
+const lerpHSLCreamPurple = (fold: number): string => {
+    return lerpHSL([45, 17, 95], [268, 43, 56], fold);
 }
 
 const mapToTriangleWave = (t: number): number => {
@@ -187,14 +214,22 @@ const mapToTriangleWave = (t: number): number => {
 
 export default function Home() {
 
+    const { resolvedTheme } = useTheme();
+
     const leftCanvasRef = useRef<HTMLCanvasElement>(null);
     const rightCanvasRef = useRef<HTMLCanvasElement>(null);
 
+
     useEffect(() => {
+
+        if (!resolvedTheme) return;
 
         const leftPoints: Point[] = [];
         const rightPoints: Point[] = [];
         let frameId: number;
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
 
         const draw = (canvas: HTMLCanvasElement | null, t: number, points: Point[]) => {
 
@@ -205,30 +240,19 @@ export default function Home() {
 
             //init points
             if (points.length === 0) {
-                points = initPoints(canvas.clientWidth, canvas.clientHeight, points);
+                points = initPoints(canvasTargetWidth, canvasTargetHeight, points);
             }
+
             //if w/h changed, resize and reinit points
-            //TODO look into this logic and see if it might be causing the
-            //perpetual canvas resizing issue
+            if (canvas.height != canvasTargetHeight || canvas.width != canvasTargetWidth) {
+                canvas.width = canvasTargetWidth;
+                canvas.height = canvasTargetHeight;
+
+                points = initPoints(canvasTargetWidth, canvasTargetHeight, points);
+            }
 
 
-
-            const canvasBoundingRect = canvas.getBoundingClientRect();
-            const displayWidth = canvasBoundingRect.width;
-            const displayHeight = Math.floor(canvasBoundingRect.height);
-
-            /*
-            if (Math.floor(canvas.height) != displayHeight) {
-                console.log(`h: ${canvas.height}, dh: ${displayHeight}`);
-                canvas.width = displayWidth;
-                canvas.height = displayHeight;
-
-
-                points = initPoints(displayWidth, displayHeight, points);
-            }*/
-
-
-            ctx.clearRect(0, 0, displayWidth, displayHeight);
+            ctx.clearRect(0, 0, canvasTargetWidth, canvasTargetHeight);
 
             //update pts
             for (const p of points) {
@@ -240,6 +264,9 @@ export default function Home() {
 
 
             ctx.lineWidth = 0.8;
+            //color fill and stroke based on theme
+            const themedFillStyle = resolvedTheme === 'dark' ? lerpHSLSlatePurple : lerpHSLCreamPurple;
+            const themedStrokeStyle = resolvedTheme === 'dark' ? `rgba(18, 18, 18, 0.05)` : `rgba(255, 255, 255, 0.05)`;
 
             for (let i = 0; i < triangles.length; i += 3) {
 
@@ -257,12 +284,12 @@ export default function Home() {
                 ctx.lineTo(c.x, c.y);
                 ctx.closePath();
 
-                const normalizedY = cy / displayHeight;
+                const normalizedY = cy / canvasTargetHeight;
                 const triangleFoldedY = mapToTriangleWave(normalizedY);
-                ctx.fillStyle = lerpHSLSlatePurple(triangleFoldedY);
+                ctx.fillStyle = themedFillStyle(triangleFoldedY);
                 ctx.fill();
 
-                ctx.strokeStyle = `rgba(255,255,255,${0.04 + 0.02 * Math.random()})`;
+                ctx.strokeStyle = themedStrokeStyle;
                 ctx.stroke();
 
             }
@@ -275,12 +302,11 @@ export default function Home() {
 
             frameId = requestAnimationFrame(loop);
         };
-
         frameId = requestAnimationFrame(loop);
 
         return () => cancelAnimationFrame(frameId);
 
-    }, []);
+    }, [resolvedTheme]);
 
     return (
 
