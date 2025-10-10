@@ -1,11 +1,15 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient, ServerApiVersion, Db } from "mongodb";
+import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
+const prisma = new PrismaClient().$extends(withAccelerate())
 
 const app = express();
 const c = 0;
 
+/*
 const uri = `${process.env.DATABASE_URI}`;
 let db: Db;
 
@@ -20,8 +24,8 @@ async function connectDB() {
     await client.connect();
     db = client.db("vvv-fullstack-db-main");
     console.log("Connected to MongoDB.");
-
 }
+*/
 
 // Middleware
 app.use(cors());

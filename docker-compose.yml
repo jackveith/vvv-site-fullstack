@@ -1,6 +1,4 @@
-
 services:
-
   backend:
     build:
       context: ./vvv-site-backend/
@@ -8,7 +6,7 @@ services:
       target: prod
     container_name: express-api
     environment:
-      - DATABASE_URI=${DATABASE_URI}
+      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "4000:4000"
     networks:
@@ -31,8 +29,6 @@ services:
       - app-network
     command: npm run start
 
-
 networks:
   app-network:
     driver: bridge
-

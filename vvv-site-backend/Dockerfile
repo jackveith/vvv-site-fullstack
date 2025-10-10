@@ -14,6 +14,7 @@ FROM base AS dev
 WORKDIR /app
 COPY . .
 EXPOSE 4000
+RUN npx prisma generate
 CMD ["npm", "run", "dev"]
 
 # ---- PRODUCTION ----
@@ -21,6 +22,7 @@ FROM base AS prod
 WORKDIR /app
 COPY . .
 EXPOSE 4000
+RUN npx prisma generate
 RUN npm run build
 CMD ["npm", "start"]
 

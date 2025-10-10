@@ -65,7 +65,8 @@ const handleResize = () => {
 
 const initPoints = (w: number, h: number, points: Point[]) => {
 
-    //define how large the area in which the points will be generated in will be proportional to the canvas display W/H
+    //canvas and pointArea model: pointArea is a larger rectangular area
+    //around the canvas with the same centroid that is bigger by some proportion
     const pointAreaBufferProportion = 0.2;
 
     const canvasW = w, canvasH = h;
