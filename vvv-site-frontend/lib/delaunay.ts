@@ -54,6 +54,25 @@ interface DelaunayConfigOptions {
     tries?: number;
 }
 
+class DelaunayConfig {
+
+    pointAreaProportion?: number;
+    dimension?: number;
+    radius?: number;
+    tries?: number;
+
+    constructor(opts: DelaunayConfigOptions) {
+        const defaults = {
+            pointAreaProportion: 0.2,
+            dimension: 2,
+            radius: 50,
+            tries: 30
+        };
+
+        Object.assign(this, { ...defaults, opts });
+    }
+}
+
 class DelaunayCanvas {
     w: number;
     h: number;
@@ -89,24 +108,6 @@ class DelaunayCanvas {
 
 }
 
-class DelaunayConfig {
-
-    pointAreaProportion?: number;
-    dimension?: number;
-    radius?: number;
-    tries?: number;
-
-    constructor(opts: DelaunayConfigOptions) {
-        const defaults = {
-            pointAreaProportion: 0.2,
-            dimension: 2,
-            radius: 50,
-            tries: 30
-        };
-
-        Object.assign(this, { ...defaults, opts });
-    }
-}
 
 const initPoints = (w: number, h: number, points: Point[]) => {
 
