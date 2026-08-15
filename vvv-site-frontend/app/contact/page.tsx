@@ -308,9 +308,9 @@ export default function Home() {
     return (
 
         <div className="font-sans grid grid-rows-[20px_1fr_20px] grid-cols-[auto_1fr_auto] h-full">
-            <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[15vw] h-full flex-1" />
-            <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[15vw] h-full flex-1" />
-            <div className="flex flex-col gap-[32px] col-start-2 h-full items-center justify-items-center">
+            <canvas ref={leftCanvasRef} className="row-span-3 col-start-1 w-[22vw] h-full flex-1" />
+            <canvas ref={rightCanvasRef} className="row-span-3 col-start-3 w-[22vw] h-full flex-1" />
+            <div className="flex flex-col flex-1 gap-[32px] p-24 col-start-2 h-full items-center justify-center">
                 <ContactCard icon={Send} label='Email' href='mailto:jackveith28@gmail.com' linktext='jackveith28' />
                 <ContactCard icon={CodeXml} label='Github' href='https://github.com/jackveith' linktext='gh/jackveith' />
                 <ContactCard icon={Handshake} label='LinkedIn' href='https://www.linkedin.com/in/jveith/' linktext='in/jveith' />
