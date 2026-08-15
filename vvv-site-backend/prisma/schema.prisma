@@ -1,15 +1,155 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// ─────────────────────────────────────────────────────────────
+// Space Trading Simulation — Prisma schema
+// ─────────────────────────────────────────────────────────────
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // swap for sqlite if you want zero-config local dev
   url      = env("DATABASE_URL")
 }
+
+// ── Star Systems ────────────────────────────────────────────
+
+model StarSystem {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  x           Float
+  y           Float
+  z           Float    @default(0)
+
+  // free-form bag for anything you want to add later without a migration
+  // e.g. { "faction": "Consortium", "government": "corporate", "danger": 2 }
+  attributes  Json     @default("{}")
+
+  tags        String[] // ["mining", "core-world", "outlaw"] — cheap extensibility
+
+  createdAt   DateTime @default(now())
+
+  market      SystemResource[]
+  dockedShips Ship[]
+  lanesFrom   StarLane[] @relation("LaneFrom")
+  lanesTo     StarLane[] @relation("LaneTo")
+  trades      Trade[]
+}
+
+// Explicit connectivity graph — lets you have a non-fully-connected galaxy
+// (dead ends, chokepoints, faction borders) rather than "fly anywhere instantly"
+model StarLane {
+  id         String     @id @default(cuid())
+  fromId     String
+  toId       String
+  distance   Float      // arbitrary units, used for travel-time calc
+
+  from       StarSystem @relation("LaneFrom", fields: [fromId], references: [id])
+  to         StarSystem @relation("LaneTo", fields: [toId], references: [id])
+
+  @@unique([fromId, toId])
+}
+
+// ── Resources / Goods catalog ───────────────────────────────
+
+model Resource {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  category    String   // "raw", "industrial", "luxury", "contraband"... plain string, not enum, so new categories don't need a migration
+  basePrice   Float
+  volatility  Float    @default(0.15) // how far prices can wander from basePrice, as a fraction
+
+  attributes  Json     @default("{}") // e.g. { "legal": false, "mass": 1.2 }
+
+  market      SystemResource[]
+  cargo       CargoItem[]
+  trades      Trade[]
+}
+
+// ── Per-system market (many-to-many with extra state) ──────
+// This is the "fluctuating prices" table: one row per (system, resource)
+
+model SystemResource {
+  id           String     @id @default(cuid())
+  systemId     String
+  resourceId   String
+
+  currentPrice Float
+  supply       Int        @default(500) // units in stock at this system
+  demand       Int        @default(500) // relative "want" — nudges price/regen
+
+  updatedAt    DateTime   @updatedAt
+
+  system       StarSystem @relation(fields: [systemId], references: [id])
+  resource     Resource   @relation(fields: [resourceId], references: [id])
+
+  @@unique([systemId, resourceId])
+}
+
+// ── Ships ────────────────────────────────────────────────────
+
+model Ship {
+  id                  String     @id @default(cuid())
+  name                String
+  credits             Float      @default(1000)
+  cargoCapacity       Int        @default(100)
+
+  status              ShipStatus @default(DOCKED)
+
+  currentSystemId     String?
+  currentSystem       StarSystem? @relation(fields: [currentSystemId], references: [id])
+
+  destinationSystemId String?
+  departedAt          DateTime?
+  arrivesAt           DateTime?   // travel is "lazy" — compute arrival on read, no worker needed
+
+  cargo               CargoItem[]
+  trades              Trade[]
+
+  createdAt           DateTime   @default(now())
+}
+
+enum ShipStatus {
+  DOCKED
+  IN_TRANSIT
+}
+
+model CargoItem {
+  id         String   @id @default(cuid())
+  shipId     String
+  resourceId String
+  quantity   Int
+
+  ship       Ship     @relation(fields: [shipId], references: [id])
+  resource   Resource @relation(fields: [resourceId], references: [id])
+
+  @@unique([shipId, resourceId])
+}
+
+// ── Trade log ────────────────────────────────────────────────
+// Not strictly required to run the sim, but this is what turns it into
+// a good demo: price-history charts, "most profitable trade route" queries,
+// aggregate stats — all the stuff that shows off relational querying.
+
+model Trade {
+  id         String    @id @default(cuid())
+  shipId     String
+  systemId   String
+  resourceId String
+
+  type       TradeType
+  quantity   Int
+  price      Float     // price PER UNIT at time of trade
+  timestamp  DateTime  @default(now())
+
+  ship       Ship       @relation(fields: [shipId], references: [id])
+  system     StarSystem @relation(fields: [systemId], references: [id])
+  resource   Resource   @relation(fields: [resourceId], references: [id])
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
+
