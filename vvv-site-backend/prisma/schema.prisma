@@ -21,6 +21,9 @@ model StarSystem {
   x           Float
   y           Float
   z           Float    @default(0)
+  size        Float    @default(4)
+  brightness  Float    @default(1)
+  color       String   @default("#ffffff")
 
   // free-form bag for anything you want to add later without a migration
   // e.g. { "faction": "Consortium", "government": "corporate", "danger": 2 }

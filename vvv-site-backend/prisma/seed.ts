@@ -2,7 +2,7 @@
 // Populates the database with a small starter galaxy.
 // Run with: npx prisma db seed
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '../src/generated/prisma/client.js';
 
 const prisma = new PrismaClient();
 
@@ -16,15 +16,15 @@ async function main() {
 
     // ── Star systems ─────────────────────────────────────────
     const sol = await prisma.starSystem.create({
-        data: { name: "Sol", x: 0, y: 0, z: 0, tags: ["core-world", "capital"] },
+        data: { name: "Sol", x: 0, y: 0, z: 0, size: 6, brightness: 1, color: "#F9C87A", tags: ["core-world", "capital"] },
     });
 
     const altair = await prisma.starSystem.create({
-        data: { name: "Altair", x: 12, y: -4, z: 1, tags: ["mining"] },
+        data: { name: "Altair", x: 36, y: -8, z: 1, size: 4, brightness: 1, color: "#80A8F4", tags: ["mining"] },
     });
 
     const kepler = await prisma.starSystem.create({
-        data: { name: "Kepler-9", x: -8, y: 9, z: -2, tags: ["outlaw", "black-market"] },
+        data: { name: "Kepler-9", x: -24, y: 18, z: -2, size: 3, brightness: 1, color: "#FFFFFF", tags: ["outlaw", "black-market"] },
     });
 
     // Connect them with lanes (bidirectional — add both rows so travel works either way)
