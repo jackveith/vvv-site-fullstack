@@ -3,8 +3,6 @@ import cors from "cors";
 
 import systemsRouter from "./routes/systems.js";
 
-
-
 //deprecated moved to db.ts
 //import { PrismaClient } from './generated/prisma/index.js'
 //import { withAccelerate } from '@prisma/extension-accelerate'

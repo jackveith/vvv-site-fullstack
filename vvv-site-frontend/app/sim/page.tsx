@@ -26,10 +26,8 @@ export default async function Home() {
     const systems = await getStarSystems();
 
     return (
-        <div className="font-sans flex items-center justify-items-center">
-            <div className="flex flex-col overflow-hidden bg-black w-full h-full min-h-0">
-                <StarMap systems={systems} />
-            </div>
+        <div className="flex flex-col overflow-hidden bg-black w-full h-full min-h-0">
+            <StarMap systems={systems} />
         </div>
     );
 }
