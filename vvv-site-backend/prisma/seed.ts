@@ -4,7 +4,10 @@
 
 import { PrismaClient } from '../src/generated/prisma/client.js';
 
+import { generateGalaxy, DEFAULT_CONFIG, type Galaxy, type StarSystem, type SystemEdge } from './galaxyGenerator.js';
+
 const prisma = new PrismaClient();
+const random = true;
 
 async function main() {
 
@@ -14,17 +17,73 @@ async function main() {
         return;
     }
 
+    if (random) {
+        await randomGeneration();
+    } else {
+        await staticGeneration();
+    }
+}
+
+main()
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
+
+async function randomGeneration() {
+
+    const galaxy: Galaxy = generateGalaxy(DEFAULT_CONFIG);
+    //const galaxy: Galaxy = generateGalaxy(DEFAULT_CONFIG, 12345); //seedable
+
+    const idMap = new Map<string, string>();
+
+    //for each system, add it to the prisma db and map its working id to its prisma id
+    for (const system of galaxy.systems) {
+        const created = await prisma.starSystem.create({
+            data: {
+                name: `System ${system.id}`,
+                x: system.x,
+                y: system.y,
+                radius: system.radius,
+                brightness: 1,
+                color: "#FFFFFF",
+            }
+        });
+
+        idMap.set(system.id, created.id);
+    }
+
+    //using the id map, add the system edges to the db
+    for (const edge of galaxy.edges) {
+        await prisma.starLane.create({
+            data: {
+                fromId: idMap.get(edge.a)!,
+                toId: idMap.get(edge.b)!,
+                distance: edge.distance,
+            }
+        });
+
+    }
+    //end db fill
+    console.log(`Seeded ${galaxy.systems.length} systems and ${galaxy.edges.length} connections.`);
+}
+
+async function staticGeneration() {
+
     // ── Star systems ─────────────────────────────────────────
     const sol = await prisma.starSystem.create({
-        data: { name: "Sol", x: 0, y: 0, z: 0, size: 6, brightness: 1, color: "#F9C87A", tags: ["core-world", "capital"] },
+        data: { name: "Sol", x: 0, y: 0, z: 0, radius: 6, brightness: 1, color: "#F9C87A", tags: ["core-world", "capital"] },
     });
 
     const altair = await prisma.starSystem.create({
-        data: { name: "Altair", x: 36, y: -8, z: 1, size: 4, brightness: 1, color: "#80A8F4", tags: ["mining"] },
+        data: { name: "Altair", x: 36, y: -8, z: 1, radius: 4, brightness: 1, color: "#80A8F4", tags: ["mining"] },
     });
 
     const kepler = await prisma.starSystem.create({
-        data: { name: "Kepler-9", x: -24, y: 18, z: -2, size: 3, brightness: 1, color: "#FFFFFF", tags: ["outlaw", "black-market"] },
+        data: { name: "Kepler-9", x: -24, y: 18, z: -2, radius: 3, brightness: 1, color: "#FFFFFF", tags: ["outlaw", "black-market"] },
     });
 
     // Connect them with lanes (bidirectional — add both rows so travel works either way)
@@ -90,11 +149,3 @@ async function main() {
     console.log("Seed complete.");
 }
 
-main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
