@@ -9,7 +9,7 @@ type StarSystem = {
     x: number;
     y: number;
     z: number;
-    size: number;
+    radius: number;
     brightness: number;
     color: string;
 };
@@ -17,7 +17,7 @@ type StarSystem = {
 type BackgroundStar = {
     x: number;
     y: number;
-    size: number;
+    radius: number;
     brightness: number;
 }
 
@@ -61,7 +61,7 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
             backgroundStars = Array.from({ length: count }, (): BackgroundStar => ({
                 x: rand(0, cssWidth),
                 y: rand(0, cssHeight),
-                size: rand(0.3, 1.1),
+                radius: rand(0.3, 1.1),
                 brightness: rand(0.15, 0.6)
             }));
         }
@@ -137,7 +137,6 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
             domHeight = rect.height;
 
             generateBackgroundStars(domWidth, domHeight);
-
             draw();
         }
 
@@ -155,7 +154,7 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
             //draw backgroundStars before transforms
             for (const star of backgroundStars) {
                 ctx!.beginPath();
-                ctx!.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx!.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
                 ctx!.fillStyle = `rgba(255,255,255, ${star.brightness})`;
                 ctx!.fill();
             }
@@ -168,7 +167,7 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
             if (systems.length === 0) return;
             for (const star of systems) {
                 ctx!.beginPath();
-                ctx!.arc(star.x, star.y, 4, 0, Math.PI * 2);
+                ctx!.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
                 ctx!.fillStyle = star.color || `rgba(255,255,255,${star.brightness})`;
                 ctx!.fill();
 

@@ -21,7 +21,7 @@ model StarSystem {
   x           Float
   y           Float
   z           Float    @default(0)
-  size        Float    @default(4)
+  radius      Float    @default(4)
   brightness  Float    @default(1)
   color       String   @default("#ffffff")
 
