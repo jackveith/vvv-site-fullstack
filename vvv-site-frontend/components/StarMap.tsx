@@ -9,45 +9,114 @@ type StarSystem = {
     x: number;
     y: number;
     z: number;
+    size: number;
+    brightness: number;
+    color: string;
 };
+
+type BackgroundStar = {
+    x: number;
+    y: number;
+    size: number;
+    brightness: number;
+}
 
 export default function StarMap({ systems }: { systems: StarSystem[] }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
+    const systemsRef = useRef(systems);
+    const drawRef = useRef<() => void>(() => { });
 
     useEffect(() => {
+        systemsRef.current = systems;
+        drawRef.current();
+    }, [systems]);
+
+    useEffect(() => {
+
+        //create the canvas/retrieve parent div node
         const canvas = canvasRef.current;
         const parent = canvas?.parentElement;
         if (!canvas || !parent) return;
-
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        let domWidth: number, domHeight: number;
 
-        //camera - canvas is translated by the "location" of the camera.
+        //globals
+        //CAMERA - canvas is translated by the "location" of the camera.
         //camera.x/y is the top left world space point of the canvas.
-        const camera = { x: -window.innerWidth / 2, y: -window.innerHeight / 2 };
-        //camera panning variables and listeners
+        const camera = { x: -window.innerWidth / 2, y: -window.innerHeight / 2, zoom: 1 };
+        const MIN_ZOOM = 0.15;
+        const MAX_ZOOM = 8;
         let dragging = false;
         let lastX = 0, lastY = 0;
 
-        canvas.addEventListener('mousedown', (e) => {
+        //starmap related
+        let backgroundStars: BackgroundStar[] = [];
+
+        function generateBackgroundStars(cssWidth: number, cssHeight: number) {
+            const rand = (min: number, max: number) => min + Math.random() * (max - min);
+            const density = 0.00025; // stars per square css-pixel
+            const count = Math.round(cssWidth * cssHeight * density);
+
+            backgroundStars = Array.from({ length: count }, (): BackgroundStar => ({
+                x: rand(0, cssWidth),
+                y: rand(0, cssHeight),
+                size: rand(0.3, 1.1),
+                brightness: rand(0.15, 0.6)
+            }));
+        }
+
+        function screenToWorld(screenX: number, screenY: number) {
+            return {
+                x: camera.x + screenX / camera.zoom,
+                y: camera.y + screenY / camera.zoom
+            };
+        }
+
+
+        //CAMERA PAN/ZOOM LISTENERS
+        const handleMouseDown = ((e: MouseEvent) => {
             dragging = true;
             lastX = e.clientX;
             lastY = e.clientY;
             canvas.style.cursor = 'grabbing';
         });
-        window.addEventListener('mouseup', () => {
+        const handleMouseUp = (() => {
             dragging = false;
             canvas.style.cursor = 'grab';
         });
-        window.addEventListener('mousemove', (e) => {
+        const handleMouseMove = ((e: MouseEvent) => {
             if (!dragging) return;
-            camera.x -= (e.clientX - lastX);
-            camera.y -= (e.clientY - lastY);
+            camera.x -= (e.clientX - lastX) / camera.zoom;
+            camera.y -= (e.clientY - lastY) / camera.zoom;
             lastX = e.clientX;
             lastY = e.clientY;
             draw();
         });
+        const handleWheel = ((e: WheelEvent) => {
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const screenX = e.clientX - rect.left;
+            const screenY = e.clientY - rect.top;
+
+            const before = screenToWorld(screenX, screenY);
+
+            // Exponential feels smoother than linear across a wide zoom range.
+            const zoomIntensity = 0.0015;
+            const factor = Math.exp(-e.deltaY * zoomIntensity);
+            camera.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, camera.zoom * factor));
+
+            // Re-solve camera.x/y so `before` still lands under the cursor.
+            camera.x = before.x - screenX / camera.zoom;
+            camera.y = before.y - screenY / camera.zoom;
+
+            draw();
+        });
+        canvas.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('wheel', handleWheel, { passive: false });
         canvas.style.cursor = 'grab';
 
 
@@ -64,39 +133,43 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
             // Reset (not compound) the transform each resize, then apply only
             // the DPR correction. No world-to-container scaling here.
             ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+            domWidth = rect.width;
+            domHeight = rect.height;
+
+            generateBackgroundStars(domWidth, domHeight);
 
             draw();
         }
 
         //MAIN DRAW - called every frame
         function draw() {
+            const systems = systemsRef.current;
             const dpr = window.devicePixelRatio || 1;
-            const { width, height } = parent!.getBoundingClientRect();
 
-            // Backing pixel buffer scaled for rendering on high-DPI screens
-            canvas!.width = Math.round(width * dpr);
-            canvas!.height = Math.round(height * dpr);
-            ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-            // Background
-            ctx!.clearRect(0, 0, width, height);
-            ctx!.fillStyle = '#141217';
-            ctx!.fillRect(0, 0, width, height);
-
-            if (systems.length === 0) return;
 
             //new star drawing code - just draw the stars in their actual world coordinates
-            ctx!.clearRect(0, 0, width, height);
+            ctx!.clearRect(0, 0, domWidth, domHeight);
             ctx!.fillStyle = '#05070d';
-            ctx!.fillRect(0, 0, width, height);
+            ctx!.fillRect(0, 0, domWidth, domHeight);
 
+            //draw backgroundStars before transforms
+            for (const star of backgroundStars) {
+                ctx!.beginPath();
+                ctx!.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx!.fillStyle = `rgba(255,255,255, ${star.brightness})`;
+                ctx!.fill();
+            }
+
+            //camera pan and zoom tranforms
             ctx!.save();
+            ctx!.scale(camera.zoom, camera.zoom);
             ctx!.translate(-camera.x, -camera.y);
 
+            if (systems.length === 0) return;
             for (const star of systems) {
                 ctx!.beginPath();
                 ctx!.arc(star.x, star.y, 4, 0, Math.PI * 2);
-                ctx!.fillStyle = `rgba(255,255,255,1)`;
+                ctx!.fillStyle = star.color || `rgba(255,255,255,${star.brightness})`;
                 ctx!.fill();
 
                 //labelling systems
@@ -107,8 +180,8 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
                 // }
             }
             ctx!.restore();
-
         }
+        drawRef.current = draw;
 
         resizeCanvas();
 
@@ -116,8 +189,14 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
         const resizeObserver = new ResizeObserver(resizeCanvas);
         resizeObserver.observe(parent);
 
-        return () => resizeObserver.disconnect();
-    }, [systems]);
+        return () => {
+            canvas.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('wheel', handleWheel);
+            resizeObserver.disconnect();
+        }
+    }, []);
 
     return <canvas ref={canvasRef} className="block flex-1 w-full h-full min-h-0" />;
 }
