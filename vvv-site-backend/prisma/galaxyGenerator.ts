@@ -1,12 +1,43 @@
 
 export type SystemDepth = 'skeleton' | 'leaf';
 
+export enum StellarClass {
+    O = "O",
+    B = "B",
+    A = "A",
+    F = "F",
+    G = "G",
+    K = "K",
+    M = "M",
+};
+const stellarClassColors: Record<StellarClass, string> = {
+    [StellarClass.O]: "#9BB0FF",
+    [StellarClass.B]: "#B0C7FF",
+    [StellarClass.A]: "#DDE5FF",
+    [StellarClass.F]: "#FFF4D6",
+    [StellarClass.G]: "#FFE08A",
+    [StellarClass.K]: "#FFB45C",
+    [StellarClass.M]: "#FF6B4A",
+};
+
+const stellarClassWeights: Record<StellarClass, number> = {
+    [StellarClass.O]: 4,
+    [StellarClass.B]: 13,
+    [StellarClass.A]: 27,
+    [StellarClass.F]: 51,
+    [StellarClass.G]: 96,
+    [StellarClass.K]: 179,
+    [StellarClass.M]: 562,
+};
+
 export interface StarSystem {
     id: string;
     x: number;
     y: number;
     radius: number;
     depth: SystemDepth;
+    stellarClass: StellarClass;
+    color: string;
     /** id of the system this one branched off of during generation (null for the root) */
     parentId: string | null;
 }
@@ -45,10 +76,10 @@ export interface GenerationConfig {
 }
 
 export const DEFAULT_CONFIG: GenerationConfig = {
-    skeletonCountRange: [4, 9],
-    leafCountRange: [1, 5],
-    edgeDistanceRange: [120, 260],
-    systemRadiusRange: [10, 28],
+    skeletonCountRange: [9, 13],
+    leafCountRange: [2, 8],
+    edgeDistanceRange: [300, 780],
+    systemRadiusRange: [4, 10],
     padding: 24,
     maxPlacementAttempts: 24,
     relaxationFactor: 1.35,
@@ -80,6 +111,27 @@ const dist = (ax: number, ay: number, bx: number, by: number) => Math.hypot(ax -
 let idCounter = 0;
 /** Swap this for uuid/nanoid in production if you need globally-unique ids across sessions. */
 const genId = () => `sys_${(idCounter++).toString(36)}`;
+
+/*randomly pull an outcome from a weighted distribution */
+function weightedRandom<T>(rng: Rng, weights: Record<string, number>): T {
+    const entries = Object.entries(weights);
+
+    const totalWeight = entries.reduce(
+        (sum, [, weight]) => sum + weight,
+        0
+    );
+    let roll = randInt(rng, 0, totalWeight - 1);
+
+    for (const [item, weight] of entries) {
+        roll -= weight;
+        if (roll < 0) { return item as T; }
+    }
+    throw new Error("Invalid weight distribution");
+}
+
+function generateStellarClass(rng: Rng): StellarClass {
+    return weightedRandom<StellarClass>(rng, stellarClassWeights);
+}
 
 // ---------- Collision ----------
 
@@ -131,18 +183,23 @@ function findPlacement(
 
 
 
+// ---------- Pass 1: Skeleton ----------
 
 export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
     const count = randInt(rng, config.skeletonCountRange[0], config.skeletonCountRange[1]);
     const systems: StarSystem[] = [];
     const edges: SystemEdge[] = [];
 
+    let firstClass = generateStellarClass(rng);
     const first: StarSystem = {
         id: genId(),
         x: 0,
         y: 0,
         radius: randRange(rng, config.systemRadiusRange[0], config.systemRadiusRange[1]),
         depth: 'skeleton',
+        stellarClass: firstClass,
+        //color: stellarClassColors[firstClass],
+        color: "#00FF00",
         parentId: null,
     };
     systems.push(first);
@@ -163,12 +220,17 @@ export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
         const placement = findPlacement(parent, systems, config, rng);
         if (!placement) continue; // try a different parent next iteration
 
+        const newClass = generateStellarClass(rng);
+
         const node: StarSystem = {
             id: genId(),
             x: placement.x,
             y: placement.y,
             radius: placement.radius,
             depth: 'skeleton',
+            stellarClass: newClass,
+            //color: stellarClassColors[newClass],
+            color: "#00FF00",
             parentId: parent.id,
         };
         systems.push(node);
@@ -201,7 +263,9 @@ export function generateLeaves(galaxy: Galaxy, config: GenerationConfig, rng: Rn
             // — from this parent AND from parents already processed — are all
             // checked against each other, not just against the skeleton.
             const placement = findPlacement(parent, galaxy.systems, config, rng);
-            if (!placement) break; // this neighborhood is full; stop early, keep what we have
+            if (!placement) break; // this neighborhood is full; stop early
+
+            const newClass = generateStellarClass(rng);
 
             const leaf: StarSystem = {
                 id: genId(),
@@ -209,6 +273,8 @@ export function generateLeaves(galaxy: Galaxy, config: GenerationConfig, rng: Rn
                 y: placement.y,
                 radius: placement.radius,
                 depth: 'leaf',
+                stellarClass: newClass,
+                color: stellarClassColors[newClass],
                 parentId: parent.id,
             };
             galaxy.systems.push(leaf);
@@ -217,6 +283,33 @@ export function generateLeaves(galaxy: Galaxy, config: GenerationConfig, rng: Rn
         }
     }
 }
+
+export function addSkeletonLoops(
+    galaxy: Galaxy,
+    config: GenerationConfig,
+    rng: Rng,
+    chance: number = 0.15
+): void {
+    const skeletonNodes = galaxy.systems.filter((s) => s.depth === 'skeleton');
+    const existingEdgeKey = new Set(galaxy.edges.map((e) => [e.a, e.b].sort().join('|')));
+
+    for (let i = 0; i < skeletonNodes.length; i++) {
+        for (let j = i + 1; j < skeletonNodes.length; j++) {
+            const a = skeletonNodes[i];
+            const b = skeletonNodes[j];
+            const key = [a.id, b.id].sort().join('|');
+            if (existingEdgeKey.has(key)) continue;
+
+            const d = dist(a.x, a.y, b.x, b.y);
+            const [minD, maxD] = config.edgeDistanceRange;
+            if (d >= minD && d <= maxD && rng() < chance) {
+                galaxy.edges.push({ a: a.id, b: b.id, distance: dist(a.x, a.y, b.x, b.y) });
+                existingEdgeKey.add(key);
+            }
+        }
+    }
+}
+
 
 // ---------- Orchestrator ----------
 

@@ -49,7 +49,7 @@ async function randomGeneration() {
                 y: system.y,
                 radius: system.radius,
                 brightness: 1,
-                color: "#FFFFFF",
+                color: system.color,
             }
         });
 
