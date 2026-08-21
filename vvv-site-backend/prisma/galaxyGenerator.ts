@@ -1,3 +1,4 @@
+import Delaunator from "delaunator";
 
 export type SystemDepth = 'skeleton' | 'leaf';
 
@@ -30,6 +31,40 @@ const stellarClassWeights: Record<StellarClass, number> = {
     [StellarClass.M]: 562,
 };
 
+
+class UnionFind {
+    private parent: number[];
+    private rank: number[];
+
+    constructor(size: number) {
+        this.parent = Array.from({ length: size }, (_, i) => i);
+        this.rank = new Array(size).fill(0);
+    }
+
+    find(x: number): number {
+        if (this.parent[x] !== x) {
+            this.parent[x] = this.find(this.parent[x]);
+        }
+        return this.parent[x];
+    }
+
+    union(x: number, y: number): boolean {
+        const rootX = this.find(x);
+        const rootY = this.find(y);
+        if (rootX === rootY) return false;
+
+        if (this.rank[rootX] < this.rank[rootY]) {
+            this.parent[rootX] = rootY;
+        } else if (this.rank[rootX] > this.rank[rootY]) {
+            this.parent[rootY] = rootX;
+        } else {
+            this.parent[rootY] = rootX;
+            this.rank[rootX]++;
+        }
+        return true;
+    }
+}
+
 export interface StarSystem {
     id: string;
     x: number;
@@ -53,6 +88,7 @@ export interface Galaxy {
     edges: SystemEdge[];
 }
 
+//TODO: separate distance ranges for skeleton and leaf system?
 export interface GenerationConfig {
     /** inclusive min/max number of systems in the skeleton pass */
     skeletonCountRange: [number, number];
@@ -76,8 +112,8 @@ export interface GenerationConfig {
 }
 
 export const DEFAULT_CONFIG: GenerationConfig = {
-    skeletonCountRange: [9, 13],
-    leafCountRange: [2, 8],
+    skeletonCountRange: [13, 19],
+    leafCountRange: [1, 3],
     edgeDistanceRange: [300, 780],
     systemRadiusRange: [4, 10],
     padding: 24,
@@ -198,8 +234,8 @@ export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
         radius: randRange(rng, config.systemRadiusRange[0], config.systemRadiusRange[1]),
         depth: 'skeleton',
         stellarClass: firstClass,
-        //color: stellarClassColors[firstClass],
-        color: "#00FF00",
+        color: stellarClassColors[firstClass],
+        //color: "#00FF00",
         parentId: null,
     };
     systems.push(first);
@@ -229,12 +265,11 @@ export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
             radius: placement.radius,
             depth: 'skeleton',
             stellarClass: newClass,
-            //color: stellarClassColors[newClass],
-            color: "#00FF00",
+            color: stellarClassColors[newClass],
+            //color: "#00FF00",
             parentId: parent.id,
         };
         systems.push(node);
-        edges.push({ a: parent.id, b: node.id, distance: dist(parent.x, parent.y, node.x, node.y) });
     }
 
     return { systems, edges };
@@ -278,36 +313,91 @@ export function generateLeaves(galaxy: Galaxy, config: GenerationConfig, rng: Rn
                 parentId: parent.id,
             };
             galaxy.systems.push(leaf);
-            galaxy.edges.push({ a: parent.id, b: leaf.id, distance: dist(parent.x, parent.y, leaf.x, leaf.y) });
             placed++;
         }
     }
 }
 
-export function addSkeletonLoops(
-    galaxy: Galaxy,
-    config: GenerationConfig,
-    rng: Rng,
-    chance: number = 0.15
-): void {
-    const skeletonNodes = galaxy.systems.filter((s) => s.depth === 'skeleton');
-    const existingEdgeKey = new Set(galaxy.edges.map((e) => [e.a, e.b].sort().join('|')));
+function edgeKey(a: string, b: string): string {
+    return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
 
-    for (let i = 0; i < skeletonNodes.length; i++) {
-        for (let j = i + 1; j < skeletonNodes.length; j++) {
-            const a = skeletonNodes[i];
-            const b = skeletonNodes[j];
-            const key = [a.id, b.id].sort().join('|');
-            if (existingEdgeKey.has(key)) continue;
+export function computeDelaunayEdges(points: StarSystem[]) {
 
-            const d = dist(a.x, a.y, b.x, b.y);
-            const [minD, maxD] = config.edgeDistanceRange;
-            if (d >= minD && d <= maxD && rng() < chance) {
-                galaxy.edges.push({ a: a.id, b: b.id, distance: dist(a.x, a.y, b.x, b.y) });
-                existingEdgeKey.add(key);
-            }
+    const coords = new Float64Array(points.length * 2);
+    points.forEach((p, i) => {
+        coords[i * 2] = p.x;
+        coords[i * 2 + 1] = p.y;
+    });
+
+    const delaunay = new Delaunator(coords);
+    const edgeMap = new Map<string, SystemEdge>();
+
+    const addEdge = (i: number, j: number) => {
+        const a = points[i];
+        const b = points[j];
+        const key = edgeKey(a.id, b.id);
+        if (edgeMap.has(key)) return;
+        edgeMap.set(key, { a: a.id, b: b.id, distance: Math.hypot(a.x - b.x, a.y - b.y) });
+    };
+
+    //after Delaunator creates triangles, add all edges (3 per tri)
+    //to the candidate edge array for finding the MST
+    for (let t = 0; t < delaunay.triangles.length; t += 3) {
+        const p0 = delaunay.triangles[t];
+        const p1 = delaunay.triangles[t + 1];
+        const p2 = delaunay.triangles[t + 2];
+        addEdge(p0, p1);
+        addEdge(p1, p2);
+        addEdge(p2, p0);
+    }
+
+    return Array.from(edgeMap.values());
+}
+
+export function kruskalMST(edges: SystemEdge[], points: StarSystem[]): SystemEdge[] {
+    const idToIndex = new Map(points.map((p, i) => [p.id, i]));
+    const sorted = [...edges].sort((a, b) => a.distance - b.distance);
+    const uf = new UnionFind(points.length);
+    const mstEdges: SystemEdge[] = [];
+
+    for (const edge of sorted) {
+        const i = idToIndex.get(edge.a)!;
+        const j = idToIndex.get(edge.b)!;
+        if (uf.union(i, j)) {
+            mstEdges.push(edge);
         }
     }
+
+    return mstEdges;
+}
+
+export interface SystemEdgeOptions {
+    redundancy?: number;
+}
+
+export function generateSystemEdges(
+    systems: StarSystem[],
+    options: SystemEdgeOptions = {}
+): SystemEdge[] {
+
+    const { redundancy = .25 } = options;
+
+    //1. compute candidate edges and MST
+    const delaunayEdges = computeDelaunayEdges(systems);
+    const mstEdges = kruskalMST(delaunayEdges, systems);
+
+    //2. find all the "leftover" delaunayEdges (i.e. all the edges not in the MST)
+    //and sort them by their length. then add extra edges to the MST to
+    //form the final graph, based on redundancy value
+    const mstKeys = new Set(mstEdges.map((e) => edgeKey(e.a, e.b)));
+    const leftover = delaunayEdges
+        .filter((e) => !mstKeys.has(edgeKey(e.a, e.b)))
+        .sort((a, b) => a.distance - b.distance);
+    const extraCount = Math.round(leftover.length * redundancy);
+    const extraEdges = leftover.slice(0, extraCount);
+
+    return [...mstEdges, ...extraEdges];
 }
 
 
@@ -320,6 +410,8 @@ export function generateGalaxy(
     const rng = createRng(seed);
     const galaxy = generateSkeleton(config, rng);
     generateLeaves(galaxy, config, rng);
+    galaxy.edges = generateSystemEdges(galaxy.systems);
+
     return galaxy;
 }
 
