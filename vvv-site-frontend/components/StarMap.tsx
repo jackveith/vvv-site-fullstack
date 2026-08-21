@@ -14,6 +14,13 @@ type StarSystem = {
     color: string;
 };
 
+type StarLane = {
+    id: string;
+    fromId: string;
+    toId: string;
+    distance: number;
+}
+
 type BackgroundStar = {
     x: number;
     y: number;
@@ -21,15 +28,17 @@ type BackgroundStar = {
     brightness: number;
 }
 
-export default function StarMap({ systems }: { systems: StarSystem[] }) {
+export default function StarMap({ systems, starlanes }: { systems: StarSystem[]; starlanes: StarLane[]; }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const systemsRef = useRef(systems);
+    const starlanesRef = useRef(starlanes);
     const drawRef = useRef<() => void>(() => { });
 
     useEffect(() => {
         systemsRef.current = systems;
+        starlanesRef.current = starlanes;
         drawRef.current();
-    }, [systems]);
+    }, [systems, starlanes]);
 
     useEffect(() => {
 
@@ -52,6 +61,7 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
 
         //starmap related
         let backgroundStars: BackgroundStar[] = [];
+        const systemById = new Map(systems.map((s) => [s.id, s]));
 
         function generateBackgroundStars(cssWidth: number, cssHeight: number) {
             const rand = (min: number, max: number) => min + Math.random() * (max - min);
@@ -178,6 +188,35 @@ export default function StarMap({ systems }: { systems: StarSystem[] }) {
                 //     ctx!.fillText(star.label, star.x + star.radius + 6, star.y + 4);
                 // }
             }
+
+            for (const lane of starlanes) {
+                const from = systemById.get(lane.fromId);
+                const to = systemById.get(lane.toId);
+                if (!from || !to) continue;
+
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist === 0) continue;
+
+                const ux = dx / dist;
+                const uy = dy / dist;
+
+                // pull each end in by that star's radius so the line starts/ends
+                // at the edge of the circle, not the center
+                const startX = from.x + ux * from.radius * 1.5;
+                const startY = from.y + uy * from.radius * 1.5;
+                const endX = to.x - ux * to.radius * 1.5;
+                const endY = to.y - uy * to.radius * 1.5;
+
+                ctx!.strokeStyle = `rgba(240,240,240, .8)`;
+                ctx!.beginPath();
+                ctx!.moveTo(startX, startY);
+                ctx!.lineTo(endX, endY);
+                ctx!.stroke();
+            }
+
+
             ctx!.restore();
         }
         drawRef.current = draw;
