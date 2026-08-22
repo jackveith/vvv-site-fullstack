@@ -2,33 +2,11 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-
-type StarSystem = {
-    id: string;
-    name: string;
-    x: number;
-    y: number;
-    z: number;
-    radius: number;
-    brightness: number;
-    color: string;
-};
-
-type StarLane = {
-    id: string;
-    fromId: string;
-    toId: string;
-    distance: number;
-}
-
-type BackgroundStar = {
-    x: number;
-    y: number;
-    radius: number;
-    brightness: number;
-}
+import { StarSystem, StarLane, BackgroundStar, Camera } from '@/lib/starmap/types';
+import { generateBackgroundStars, screenToWorld } from '@/lib/starmap/geometry';
 
 export default function StarMap({ systems, starlanes }: { systems: StarSystem[]; starlanes: StarLane[]; }) {
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const systemsRef = useRef(systems);
     const starlanesRef = useRef(starlanes);
@@ -51,37 +29,15 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
         let domWidth: number, domHeight: number;
 
         //globals
-        //CAMERA - canvas is translated by the "location" of the camera.
-        //camera.x/y is the top left world space point of the canvas.
-        const camera = { x: -window.innerWidth / 2, y: -window.innerHeight / 2, zoom: 1 };
-        const MIN_ZOOM = 0.15;
-        const MAX_ZOOM = 8;
+        const camera: Camera = { x: -window.innerWidth / 2, y: -window.innerHeight / 2, zoom: 1 };
+        const MIN_ZOOM = 0.3;
+        const MAX_ZOOM = 6;
         let dragging = false;
         let lastX = 0, lastY = 0;
 
         //starmap related
         let backgroundStars: BackgroundStar[] = [];
         const systemById = new Map(systems.map((s) => [s.id, s]));
-
-        function generateBackgroundStars(cssWidth: number, cssHeight: number) {
-            const rand = (min: number, max: number) => min + Math.random() * (max - min);
-            const density = 0.00025; // stars per square css-pixel
-            const count = Math.round(cssWidth * cssHeight * density);
-
-            backgroundStars = Array.from({ length: count }, (): BackgroundStar => ({
-                x: rand(0, cssWidth),
-                y: rand(0, cssHeight),
-                radius: rand(0.3, 1.1),
-                brightness: rand(0.15, 0.6)
-            }));
-        }
-
-        function screenToWorld(screenX: number, screenY: number) {
-            return {
-                x: camera.x + screenX / camera.zoom,
-                y: camera.y + screenY / camera.zoom
-            };
-        }
 
 
         //CAMERA PAN/ZOOM LISTENERS
@@ -110,7 +66,7 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
             const screenX = e.clientX - rect.left;
             const screenY = e.clientY - rect.top;
 
-            const before = screenToWorld(screenX, screenY);
+            const before = screenToWorld(camera, screenX, screenY);
 
             // Exponential feels smoother than linear across a wide zoom range.
             const zoomIntensity = 0.0015;
@@ -146,7 +102,7 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
             domWidth = rect.width;
             domHeight = rect.height;
 
-            generateBackgroundStars(domWidth, domHeight);
+            backgroundStars = generateBackgroundStars(domWidth, domHeight);
             draw();
         }
 
@@ -155,8 +111,6 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
             const systems = systemsRef.current;
             const dpr = window.devicePixelRatio || 1;
 
-
-            //new star drawing code - just draw the stars in their actual world coordinates
             ctx!.clearRect(0, 0, domWidth, domHeight);
             ctx!.fillStyle = '#05070d';
             ctx!.fillRect(0, 0, domWidth, domHeight);
@@ -174,6 +128,7 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
             ctx!.scale(camera.zoom, camera.zoom);
             ctx!.translate(-camera.x, -camera.y);
 
+            //draw systems
             if (systems.length === 0) return;
             for (const star of systems) {
                 ctx!.beginPath();
@@ -189,6 +144,8 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
                 // }
             }
 
+            //draw starLanes
+            //TODO: export to lib file?
             for (const lane of starlanes) {
                 const from = systemById.get(lane.fromId);
                 const to = systemById.get(lane.toId);
@@ -196,14 +153,10 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
 
                 const dx = to.x - from.x;
                 const dy = to.y - from.y;
-                const dist = Math.hypot(dx, dy);
-                if (dist === 0) continue;
+                const ux = dx / lane.distance;
+                const uy = dy / lane.distance;
 
-                const ux = dx / dist;
-                const uy = dy / dist;
-
-                // pull each end in by that star's radius so the line starts/ends
-                // at the edge of the circle, not the center
+                //disconnect lane lines from system circles
                 const startX = from.x + ux * from.radius * 1.5;
                 const startY = from.y + uy * from.radius * 1.5;
                 const endX = to.x - ux * to.radius * 1.5;
@@ -216,11 +169,10 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
                 ctx!.stroke();
             }
 
-
             ctx!.restore();
         }
-        drawRef.current = draw;
 
+        drawRef.current = draw;
         resizeCanvas();
 
         // Redraw whenever the container's actual rendered size changes
