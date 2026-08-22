@@ -4,7 +4,9 @@
 
 import { PrismaClient } from '../src/generated/prisma/client.js';
 
-import { generateGalaxy, DEFAULT_CONFIG, type Galaxy, type StarSystem, type SystemEdge } from './galaxyGenerator.js';
+import { DEFAULT_CONFIG } from './galaxy/types.js';
+import type { Galaxy, StarSystem, SystemEdge } from './galaxy/types.js';
+import { generateGalaxy } from './galaxyGenerator.js';
 
 const prisma = new PrismaClient();
 const random = true;
