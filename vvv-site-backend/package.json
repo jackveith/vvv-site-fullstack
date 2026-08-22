@@ -37,7 +37,8 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
-        "db:fresh": "prisma migrate reset --force && prisma db seed"
+        "db:fresh": "prisma migrate reset --force && prisma db seed",
+        "typecheck": "tsc --noEmit -p prisma/tsconfig.json"
     },
     "repository": {
         "type": "git",

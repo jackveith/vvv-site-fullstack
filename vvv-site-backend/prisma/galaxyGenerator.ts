@@ -1,5 +1,4 @@
-import Delaunator from "delaunator";
-import { Rng, createRng, randRange, randInt, dist, weightedRandom } from './galaxy/rng.js';
+import { type Rng, createRng, randRange, randInt, dist, weightedRandom } from './galaxy/rng.js';
 import { StellarClass, stellarClassColors, stellarClassWeights, DEFAULT_CONFIG } from './galaxy/types.js';
 import type { StarSystem, SystemEdge, Galaxy, GenerationConfig } from './galaxy/types.js';
 import { generateSystemEdges } from './galaxy/starlanes.js';
@@ -97,7 +96,7 @@ export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
                 ? systems[systems.length - 1]
                 : systems[randInt(rng, 0, systems.length - 1)];
 
-        const placement = findPlacement(parent, systems, config, rng);
+        const placement = findPlacement(parent!, systems, config, rng);
         if (!placement) continue; // try a different parent next iteration
 
         const newClass = generateStellarClass(rng);
@@ -111,7 +110,7 @@ export function generateSkeleton(config: GenerationConfig, rng: Rng): Galaxy {
             stellarClass: newClass,
             color: stellarClassColors[newClass],
             //color: "#00FF00",
-            parentId: parent.id,
+            parentId: parent!.id,
         };
         systems.push(node);
     }

@@ -1,5 +1,6 @@
 import Delaunator from "delaunator";
-import { StarSystem, SystemEdge } from "./types.js";
+import { type StarSystem, type SystemEdge } from "./types.js";
+import { at } from './assert.js';
 
 export interface SystemEdgeOptions {
     redundancy?: number;
@@ -16,7 +17,7 @@ export class UnionFind {
 
     find(x: number): number {
         if (this.parent[x] !== x) {
-            this.parent[x] = this.find(this.parent[x]);
+            this.parent[x] = this.find(this.parent[x]!);
         }
         return this.parent[x];
     }
@@ -26,13 +27,13 @@ export class UnionFind {
         const rootY = this.find(y);
         if (rootX === rootY) return false;
 
-        if (this.rank[rootX] < this.rank[rootY]) {
+        if (this.rank[rootX]! < this.rank[rootY]!) {
             this.parent[rootX] = rootY;
-        } else if (this.rank[rootX] > this.rank[rootY]) {
+        } else if (this.rank[rootX]! > this.rank[rootY]!) {
             this.parent[rootY] = rootX;
         } else {
             this.parent[rootY] = rootX;
-            this.rank[rootX]++;
+            this.rank[rootX]!++;
         }
         return true;
     }
@@ -54,8 +55,8 @@ export function computeDelaunayEdges(points: StarSystem[]) {
     const edgeMap = new Map<string, SystemEdge>();
 
     const addEdge = (i: number, j: number) => {
-        const a = points[i];
-        const b = points[j];
+        const a = at(points, i);
+        const b = at(points, j);
         const key = edgeKey(a.id, b.id);
         if (edgeMap.has(key)) return;
         edgeMap.set(key, { a: a.id, b: b.id, distance: Math.hypot(a.x - b.x, a.y - b.y) });
@@ -64,9 +65,9 @@ export function computeDelaunayEdges(points: StarSystem[]) {
     //after Delaunator creates triangles, add all edges (3 per tri)
     //to the candidate edge array for finding the MST
     for (let t = 0; t < delaunay.triangles.length; t += 3) {
-        const p0 = delaunay.triangles[t];
-        const p1 = delaunay.triangles[t + 1];
-        const p2 = delaunay.triangles[t + 2];
+        const p0 = at(delaunay.triangles, t);
+        const p1 = at(delaunay.triangles, t + 1);
+        const p2 = at(delaunay.triangles, t + 2);
         addEdge(p0, p1);
         addEdge(p1, p2);
         addEdge(p2, p0);
