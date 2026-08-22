@@ -25,7 +25,7 @@ model StarSystem {
   brightness  Float    @default(1)
   color       String   @default("#ffffff")
 
-  // free-form bag for anything you want to add later without a migration
+  // free-form bag for frictionless prototyping
   // e.g. { "faction": "Consortium", "government": "corporate", "danger": 2 }
   attributes  Json     @default("{}")
 
@@ -40,8 +40,7 @@ model StarSystem {
   trades      Trade[]
 }
 
-// Explicit connectivity graph — lets you have a non-fully-connected galaxy
-// (dead ends, chokepoints, faction borders) rather than "fly anywhere instantly"
+// Explicit graph edges
 model StarLane {
   id         String     @id @default(cuid())
   fromId     String
