@@ -1,7 +1,7 @@
-import { type Rng, createRng, randRange, randInt, dist, weightedRandom } from './galaxy/rng.js';
-import { StellarClass, stellarClassColors, stellarClassWeights, DEFAULT_CONFIG } from './galaxy/types.js';
-import type { StarSystem, SystemEdge, Galaxy, GenerationConfig } from './galaxy/types.js';
-import { generateSystemEdges } from './galaxy/starlanes.js';
+import { type Rng, createRng, randRange, randInt, dist, weightedRandom } from '../util/rng.js';
+import { StellarClass, stellarClassColors, stellarClassWeights, DEFAULT_CONFIG } from '../util/types.js';
+import type { StarSystem, SystemEdge, Galaxy, GenerationConfig } from '../util/types.js';
+import { generateSystemEdges } from './starlanes.js';
 
 
 let idCounter = 0;

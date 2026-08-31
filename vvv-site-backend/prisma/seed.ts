@@ -79,11 +79,9 @@ async function staticGeneration() {
     const sol = await prisma.starSystem.create({
         data: { name: "Sol", x: 0, y: 0, z: 0, radius: 6, brightness: 1, color: "#F9C87A", tags: ["core-world", "capital"] },
     });
-
     const altair = await prisma.starSystem.create({
         data: { name: "Altair", x: 36, y: -8, z: 1, radius: 4, brightness: 1, color: "#80A8F4", tags: ["mining"] },
     });
-
     const kepler = await prisma.starSystem.create({
         data: { name: "Kepler-9", x: -24, y: 18, z: -2, radius: 3, brightness: 1, color: "#FFFFFF", tags: ["outlaw", "black-market"] },
     });

@@ -1,6 +1,6 @@
 import Delaunator from "delaunator";
-import { type StarSystem, type SystemEdge } from "./types.js";
-import { at } from './assert.js';
+import { type StarSystem, type SystemEdge } from "../util/types.js";
+import { at } from '../util/assert.js';
 
 export interface SystemEdgeOptions {
     redundancy?: number;
