@@ -3,6 +3,7 @@ import cors from "cors";
 
 import systemsRouter from "./routes/systems.js";
 import starLanesRouter from "./routes/starlanes.js";
+import shipsRouter from "./routes/ships.js";
 
 const PORT = process.env.PORT || 4000;
 const app = express();
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/systems", systemsRouter);
 app.use("/api/starlanes", starLanesRouter);
+app.use("/api/ships", shipsRouter);
 
 // Example API route
 app.get("/api/hello", (req, res) => {

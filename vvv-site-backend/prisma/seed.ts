@@ -4,9 +4,11 @@
 
 import { PrismaClient } from '../src/generated/prisma/client.js';
 
-import { DEFAULT_CONFIG } from './galaxy/types.js';
-import type { Galaxy, StarSystem, SystemEdge } from './galaxy/types.js';
-import { generateGalaxy } from './galaxyGenerator.js';
+import { DEFAULT_CONFIG } from './util/types.js';
+import type { Galaxy, StarSystem, SystemEdge } from './util/types.js';
+import { generateGalaxy } from './galaxy/galaxyGenerator.js';
+import { DEFAULT_SHIP_CONFIG } from './util/types.js';
+import { generateShips } from './ships/shipGenerator.js';
 
 const prisma = new PrismaClient();
 const random = true;
@@ -69,8 +71,26 @@ async function randomGeneration() {
         });
 
     }
+
+    //generate ships against the generator-space systems, then translate
+    //each ship's home system through the same idMap before inserting —
+    //same two-pass id-translation pattern used for systems -> edges above
+    const ships = generateShips(galaxy.systems, DEFAULT_SHIP_CONFIG);
+
+    for (const ship of ships) {
+        await prisma.ship.create({
+            data: {
+                name: ship.name,
+                credits: ship.credits,
+                cargoCapacity: ship.cargoCapacity,
+                status: "DOCKED",
+                currentSystemId: idMap.get(ship.currentSystemId)!,
+            }
+        });
+    }
+
     //end db fill
-    console.log(`Seeded ${galaxy.systems.length} systems and ${galaxy.edges.length} connections.`);
+    console.log(`Seeded ${galaxy.systems.length} systems and ${galaxy.edges.length} connections and ${ships.length} ships.`);
 }
 
 async function staticGeneration() {
@@ -100,15 +120,12 @@ async function staticGeneration() {
     const iron = await prisma.resource.create({
         data: { name: "Iron Ore", category: "raw", basePrice: 12, volatility: 0.1 },
     });
-
     const fuel = await prisma.resource.create({
         data: { name: "Hydrogen Fuel", category: "industrial", basePrice: 30, volatility: 0.2 },
     });
-
     const spice = await prisma.resource.create({
         data: { name: "Nebula Spice", category: "luxury", basePrice: 250, volatility: 0.4 },
     });
-
     const contraband = await prisma.resource.create({
         data: {
             name: "Unmarked Weapons",
