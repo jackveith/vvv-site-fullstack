@@ -17,6 +17,22 @@ export type StarLane = {
     distance: number;
 }
 
+export type ShipStatus = 'DOCKED' | 'IN_TRANSIT';
+
+export type Ship = {
+    id: string;
+    name: string;
+    status: ShipStatus;
+    // docked ships resolve position via currentSystemId; in-transit ships
+    // (once travel is implemented) will interpolate between systems using
+    // destinationSystemId/departedAt/arrivesAt instead.
+    currentSystemId: string | null;
+    destinationSystemId: string | null;
+    departedAt: string | null; // ISO date string over JSON
+    arrivesAt: string | null;
+}
+
+
 export type BackgroundStar = {
     x: number;
     y: number;

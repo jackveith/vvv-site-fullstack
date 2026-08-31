@@ -1,22 +1,23 @@
-// app/components/StarMap.tsx
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { StarSystem, StarLane, BackgroundStar, Camera } from '@/lib/starmap/types';
-import { generateBackgroundStars, screenToWorld } from '@/lib/starmap/geometry';
+import { StarSystem, StarLane, Ship, BackgroundStar, Camera } from '@/lib/starmap/types';
+import { generateBackgroundStars, screenToWorld, hashToUnit } from '@/lib/starmap/geometry';
 
-export default function StarMap({ systems, starlanes }: { systems: StarSystem[]; starlanes: StarLane[]; }) {
+export default function StarMap({ systems, starlanes, ships }: { systems: StarSystem[]; starlanes: StarLane[]; ships: Ship[]; }) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const systemsRef = useRef(systems);
     const starlanesRef = useRef(starlanes);
+    const shipsRef = useRef(ships);
     const drawRef = useRef<() => void>(() => { });
 
     useEffect(() => {
         systemsRef.current = systems;
         starlanesRef.current = starlanes;
+        shipsRef.current = ships;
         drawRef.current();
-    }, [systems, starlanes]);
+    }, [systems, starlanes, ships]);
 
     useEffect(() => {
 
@@ -167,6 +168,27 @@ export default function StarMap({ systems, starlanes }: { systems: StarSystem[];
                 ctx!.moveTo(startX, startY);
                 ctx!.lineTo(endX, endY);
                 ctx!.stroke();
+            }
+
+            //draw ships — docked-only for now, no travel interpolation yet.
+            //ships share a system position, so give each a small stable
+            //orbit offset (via hashToUnit) instead of stacking on one pixel.
+            const ships = shipsRef.current;
+            for (const ship of ships) {
+                if (!ship.currentSystemId) continue; // in-transit, nothing to anchor to yet
+
+                const system = systemById.get(ship.currentSystemId);
+                if (!system) continue;
+
+                const angle = hashToUnit(ship.id) * Math.PI * 2;
+                const orbitRadius = system.radius + 6;
+                const shipX = system.x + Math.cos(angle) * orbitRadius;
+                const shipY = system.y + Math.sin(angle) * orbitRadius;
+
+                ctx!.beginPath();
+                ctx!.arc(shipX, shipY, 2, 0, Math.PI * 2);
+                ctx!.fillStyle = '#4da6ff';
+                ctx!.fill();
             }
 
             ctx!.restore();
